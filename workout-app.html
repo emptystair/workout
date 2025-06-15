@@ -115,6 +115,19 @@
             margin-top: 5px;
         }
 
+        .previous-workout {
+            background: #e8f4f8;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #2980b9;
+        }
+
+        .previous-workout strong {
+            color: #2c3e50;
+        }
+
         .set-tracker {
             display: grid;
             gap: 10px;
@@ -256,22 +269,29 @@
             }
         }
 
-        /* iOS bounce prevention */
-        html, body {
-            position: fixed;
-            width: 100%;
-            height: 100%;
+        /* iOS minimal-ui behavior */
+        html {
+            height: 100vh;
+            height: -webkit-fill-available;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            position: relative;
             overflow: hidden;
         }
 
         .content-wrapper {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            /* Add extra scroll space to trigger Safari bar hiding */
+            padding-bottom: 150px;
         }
     </style>
 </head>
@@ -281,10 +301,6 @@
     </div>
 
     <div class="content-wrapper">
-        <div id="installPrompt" class="install-prompt" style="display: none;">
-            <strong>Install as App:</strong>
-            Tap the Share button below ↓ then "Add to Home Screen"
-        </div>
 
         <div class="day-selector">
             <button class="day-btn active" onclick="selectDay(1)">Push</button>
@@ -304,10 +320,6 @@
     </div>
 
     <script>
-        // Check if running as standalone app
-        if (!window.navigator.standalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
-            document.getElementById('installPrompt').style.display = 'block';
-        }
 
         const workouts = {
             1: {
@@ -371,16 +383,66 @@
             renderWorkout();
         }
 
+        function getPreviousWorkout(exerciseIndex) {
+            const today = new Date().toDateString();
+            const allDates = [];
+            
+            // Find all dates where this exercise was performed
+            Object.keys(workoutData).forEach(key => {
+                const match = key.match(/^(.*?)-day(\d+)-ex(\d+)-set(\d+)-(weight|reps)$/);
+                if (match && match[2] == currentDay && match[3] == exerciseIndex && match[1] !== today) {
+                    if (!allDates.includes(match[1])) {
+                        allDates.push(match[1]);
+                    }
+                }
+            });
+            
+            // Sort dates and get the most recent
+            allDates.sort((a, b) => new Date(b) - new Date(a));
+            const lastDate = allDates[0];
+            
+            if (!lastDate) return null;
+            
+            // Get the workout data for that date
+            const sets = [];
+            let setIndex = 0;
+            while (true) {
+                const weightKey = `${lastDate}-day${currentDay}-ex${exerciseIndex}-set${setIndex}-weight`;
+                const repsKey = `${lastDate}-day${currentDay}-ex${exerciseIndex}-set${setIndex}-reps`;
+                
+                if (workoutData[weightKey] || workoutData[repsKey]) {
+                    sets.push({
+                        weight: workoutData[weightKey] || '0',
+                        reps: workoutData[repsKey] || '0'
+                    });
+                    setIndex++;
+                } else {
+                    break;
+                }
+            }
+            
+            return sets.length > 0 ? { date: lastDate, sets } : null;
+        }
+
         function renderWorkout() {
             const container = document.getElementById('workoutContainer');
             const workout = workouts[currentDay];
             
-            container.innerHTML = workout.exercises.map((exercise, exerciseIndex) => `
+            container.innerHTML = workout.exercises.map((exercise, exerciseIndex) => {
+                const previousWorkout = getPreviousWorkout(exerciseIndex);
+                
+                return `
                 <div class="exercise-card">
                     <div class="exercise-header">
                         <div class="exercise-name">${exercise.name}</div>
                         <div class="exercise-info">${exercise.sets} sets × ${exercise.targetReps} reps | Rest: ${exercise.rest}s</div>
                     </div>
+                    ${previousWorkout ? `
+                        <div class="previous-workout">
+                            <strong>Last time (${new Date(previousWorkout.date).toLocaleDateString()}):</strong> 
+                            ${previousWorkout.sets.map((set, i) => `Set ${i+1}: ${set.weight}lbs × ${set.reps}`).join(' | ')}
+                        </div>
+                    ` : ''}
                     <div class="set-tracker">
                         ${Array.from({ length: exercise.sets }, (_, setIndex) => `
                             <div class="set-row">
@@ -413,7 +475,7 @@
                               id="notes-${exerciseIndex}"
                               onchange="saveData()">${getStoredNotes(exerciseIndex)}</textarea>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function getStoredValue(type, exerciseIndex, setIndex) {
