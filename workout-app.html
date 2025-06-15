@@ -128,6 +128,68 @@
             color: #2c3e50;
         }
 
+        .save-day-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            width: calc(100% - 30px);
+            margin: 15px;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+
+        .save-day-btn:active {
+            background: #229954;
+        }
+
+        .history-container {
+            padding: 15px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .history-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            min-width: 100%;
+        }
+
+        .history-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .history-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .history-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .history-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
         .set-tracker {
             display: grid;
             gap: 10px;
@@ -307,6 +369,7 @@
             <button class="day-btn" onclick="selectDay(2)">Pull</button>
             <button class="day-btn" onclick="selectDay(3)">Legs/Power</button>
             <button class="day-btn" onclick="selectDay(4)">Upper</button>
+            <button class="day-btn" onclick="selectDay('history')">History</button>
         </div>
 
         <div class="workout-container" id="workoutContainer"></div>
@@ -375,12 +438,19 @@
 
         let currentDay = 1;
         let workoutData = JSON.parse(localStorage.getItem('workoutData')) || {};
+        let savedWorkouts = JSON.parse(localStorage.getItem('savedWorkouts')) || [];
 
         function selectDay(day) {
             currentDay = day;
             document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.day-btn')[day - 1].classList.add('active');
-            renderWorkout();
+            
+            if (day === 'history') {
+                document.querySelectorAll('.day-btn')[4].classList.add('active');
+                renderHistory();
+            } else {
+                document.querySelectorAll('.day-btn')[day - 1].classList.add('active');
+                renderWorkout();
+            }
         }
 
         function getPreviousWorkout(exerciseIndex) {
@@ -476,6 +546,9 @@
                               onchange="saveData()">${getStoredNotes(exerciseIndex)}</textarea>
                 </div>
             `}).join('');
+            
+            // Add save button at the bottom
+            container.innerHTML += `<button class="save-day-btn" onclick="saveCompletedWorkout()">Save Completed Workout</button>`;
         }
 
         function getStoredValue(type, exerciseIndex, setIndex) {
@@ -644,6 +717,136 @@
             const a = document.createElement('a');
             a.href = url;
             a.download = `workout-data-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function saveCompletedWorkout() {
+            const today = new Date().toDateString();
+            const workout = workouts[currentDay];
+            const workoutRecord = {
+                date: today,
+                day: currentDay,
+                dayName: workout.name,
+                exercises: []
+            };
+            
+            workout.exercises.forEach((exercise, exerciseIndex) => {
+                const exerciseData = {
+                    name: exercise.name,
+                    sets: []
+                };
+                
+                for (let setIndex = 0; setIndex < exercise.sets; setIndex++) {
+                    const weight = getStoredValue('weight', exerciseIndex, setIndex);
+                    const reps = getStoredValue('reps', exerciseIndex, setIndex);
+                    
+                    if (weight || reps) {
+                        exerciseData.sets.push({
+                            setNumber: setIndex + 1,
+                            weight: weight || '0',
+                            reps: reps || '0'
+                        });
+                    }
+                }
+                
+                if (exerciseData.sets.length > 0) {
+                    workoutRecord.exercises.push(exerciseData);
+                }
+            });
+            
+            if (workoutRecord.exercises.length > 0) {
+                savedWorkouts.push(workoutRecord);
+                localStorage.setItem('savedWorkouts', JSON.stringify(savedWorkouts));
+                alert('Workout saved successfully!');
+            } else {
+                alert('Please complete at least one exercise before saving.');
+            }
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('workoutContainer');
+            
+            if (savedWorkouts.length === 0) {
+                container.innerHTML = `
+                    <div class="history-container">
+                        <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+                            <h3>No saved workouts yet</h3>
+                            <p>Complete a workout and tap "Save Completed Workout" to see it here.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Build table rows
+            const rows = [];
+            savedWorkouts.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(workout => {
+                workout.exercises.forEach(exercise => {
+                    exercise.sets.forEach(set => {
+                        rows.push({
+                            date: new Date(workout.date).toLocaleDateString(),
+                            day: workout.dayName,
+                            exercise: exercise.name,
+                            set: set.setNumber,
+                            weight: set.weight,
+                            reps: set.reps
+                        });
+                    });
+                });
+            });
+            
+            container.innerHTML = `
+                <div class="history-container">
+                    <div class="history-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Day</th>
+                                    <th>Exercise</th>
+                                    <th>Set</th>
+                                    <th>Weight</th>
+                                    <th>Reps</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows.map(row => `
+                                    <tr>
+                                        <td>${row.date}</td>
+                                        <td>${row.day}</td>
+                                        <td>${row.exercise}</td>
+                                        <td>${row.set}</td>
+                                        <td>${row.weight}</td>
+                                        <td>${row.reps}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="save-day-btn" onclick="exportHistory()" style="margin-top: 20px;">Export History to CSV</button>
+                </div>
+            `;
+        }
+
+        function exportHistory() {
+            let csv = 'Date,Day,Exercise,Set,Weight,Reps\n';
+            
+            savedWorkouts.forEach(workout => {
+                workout.exercises.forEach(exercise => {
+                    exercise.sets.forEach(set => {
+                        csv += `"${new Date(workout.date).toLocaleDateString()}","${workout.dayName}","${exercise.name}","${set.setNumber}","${set.weight}","${set.reps}"\n`;
+                    });
+                });
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `workout-history-${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
