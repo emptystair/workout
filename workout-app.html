@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Workout">
+    <title>Workout Tracker</title>
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%232c3e50'/><text x='50' y='60' font-size='50' text-anchor='middle' fill='white'>💪</text></svg>">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            padding-bottom: env(safe-area-inset-bottom, 80px);
+            padding-top: env(safe-area-inset-top);
+        }
+
+        .ios-header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            padding-top: calc(15px + env(safe-area-inset-top));
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .ios-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .content-wrapper {
+            margin-top: calc(60px + env(safe-area-inset-top));
+            padding-bottom: 80px;
+        }
+
+        .day-selector {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            overflow-x: auto;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .day-btn {
+            flex-shrink: 0;
+            padding: 12px 20px;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            -webkit-appearance: none;
+        }
+
+        .day-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .workout-container {
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .exercise-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .exercise-header {
+            margin-bottom: 15px;
+        }
+
+        .exercise-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .exercise-info {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .set-tracker {
+            display: grid;
+            gap: 10px;
+        }
+
+        .set-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 1fr 50px;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .set-number {
+            font-weight: 600;
+            color: #7f8c8d;
+            text-align: center;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            transition: border-color 0.3s;
+            -webkit-appearance: none;
+        }
+
+        .input-group input[type="number"]::-webkit-inner-spin-button,
+        .input-group input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .input-label {
+            position: absolute;
+            top: -8px;
+            left: 10px;
+            background: white;
+            padding: 0 5px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .complete-btn {
+            padding: 8px;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 18px;
+            -webkit-appearance: none;
+        }
+
+        .complete-btn.completed {
+            background: #27ae60;
+            color: white;
+        }
+
+        .notes-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 60px;
+            margin-top: 10px;
+            -webkit-appearance: none;
+        }
+
+        .ios-tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: transparent;
+            color: #3498db;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+
+        .tab-btn:active {
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .install-prompt {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            margin: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .install-prompt strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 400px) {
+            .set-row {
+                grid-template-columns: 35px 1fr 1fr 45px;
+                gap: 5px;
+            }
+            
+            .input-group input {
+                padding: 10px 5px;
+                font-size: 14px;
+            }
+        }
+
+        /* iOS bounce prevention */
+        html, body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .content-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body>
+    <div class="ios-header">
+        <h1>Workout Tracker</h1>
+    </div>
+
+    <div class="content-wrapper">
+        <div id="installPrompt" class="install-prompt" style="display: none;">
+            <strong>Install as App:</strong>
+            Tap the Share button below ↓ then "Add to Home Screen"
+        </div>
+
+        <div class="day-selector">
+            <button class="day-btn active" onclick="selectDay(1)">Push</button>
+            <button class="day-btn" onclick="selectDay(2)">Pull</button>
+            <button class="day-btn" onclick="selectDay(3)">Legs/Power</button>
+            <button class="day-btn" onclick="selectDay(4)">Upper</button>
+        </div>
+
+        <div class="workout-container" id="workoutContainer"></div>
+    </div>
+
+    <div class="ios-tab-bar">
+        <button class="tab-btn" onclick="clearDay()">Clear Day</button>
+        <button class="tab-btn" onclick="shareWorkout()">Share</button>
+        <button class="tab-btn" onclick="showStats()">Stats</button>
+        <button class="tab-btn" onclick="exportToCSV()">Export</button>
+    </div>
+
+    <script>
+        // Check if running as standalone app
+        if (!window.navigator.standalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+            document.getElementById('installPrompt').style.display = 'block';
+        }
+
+        const workouts = {
+            1: {
+                name: "Push",
+                exercises: [
+                    { name: "Barbell Bench Press", sets: 5, targetReps: "5", rest: 180, notes: "Heavy strength focus" },
+                    { name: "Overhead Press", sets: 4, targetReps: "6-8", rest: 120, notes: "Standing barbell" },
+                    { name: "Incline Dumbbell Press", sets: 3, targetReps: "8-10", rest: 90, notes: "45 degree angle" },
+                    { name: "Dumbbell Lateral Raises", sets: 3, targetReps: "12-15", rest: 60, notes: "Control the weight" },
+                    { name: "Cable Flyes", sets: 3, targetReps: "12-15", rest: 60, notes: "Constant tension" },
+                    { name: "Close-Grip Bench Press", sets: 3, targetReps: "10-12", rest: 90, notes: "Tricep focus" },
+                    { name: "Overhead Cable Triceps", sets: 3, targetReps: "12-15", rest: 60, notes: "Full extension" }
+                ]
+            },
+            2: {
+                name: "Pull",
+                exercises: [
+                    { name: "Weighted Pull-ups", sets: 5, targetReps: "5", rest: 180, notes: "Add weight progressively" },
+                    { name: "Barbell Rows", sets: 4, targetReps: "6-8", rest: 120, notes: "Explosive pull" },
+                    { name: "Cable Rows", sets: 3, targetReps: "10-12", rest: 90, notes: "Squeeze shoulder blades" },
+                    { name: "Lat Pulldowns", sets: 3, targetReps: "12-15", rest: 75, notes: "Wide grip" },
+                    { name: "Face Pulls", sets: 3, targetReps: "15-20", rest: 60, notes: "Rear delt health" },
+                    { name: "Barbell Curls", sets: 3, targetReps: "8-10", rest: 90, notes: "Strict form" },
+                    { name: "Hammer Curls", sets: 3, targetReps: "12-15", rest: 60, notes: "Neutral grip" }
+                ]
+            },
+            3: {
+                name: "Legs/Power",
+                exercises: [
+                    { name: "Back Squat", sets: 4, targetReps: "3-5", rest: 240, notes: "Heavy - running lacks max strength" },
+                    { name: "Romanian Deadlifts", sets: 4, targetReps: "6-8", rest: 180, notes: "Posterior chain strength" },
+                    { name: "Bulgarian Split Squats", sets: 3, targetReps: "8-10 each", rest: 120, notes: "Single leg stability" },
+                    { name: "Box Jumps", sets: 3, targetReps: "5", rest: 120, notes: "Explosive power" },
+                    { name: "Nordic Curls (eccentric)", sets: 3, targetReps: "5-8", rest: 90, notes: "Injury prevention" },
+                    { name: "Single Leg Calf Raises", sets: 3, targetReps: "12-15 each", rest: 60, notes: "Running strength" },
+                    { name: "Pallof Press", sets: 3, targetReps: "10-12 each", rest: 60, notes: "Core stability for running" }
+                ]
+            },
+            4: {
+                name: "Upper",
+                exercises: [
+                    { name: "Dumbbell Bench Press", sets: 4, targetReps: "8-12", rest: 90, notes: "Different angle than barbell" },
+                    { name: "Dumbbell Rows", sets: 4, targetReps: "10-12", rest: 90, notes: "Unilateral work" },
+                    { name: "Dumbbell Shoulder Press", sets: 3, targetReps: "10-12", rest: 75, notes: "Seated or standing" },
+                    { name: "Pull-ups (bodyweight)", sets: 3, targetReps: "Max reps", rest: 120, notes: "Endurance focus" },
+                    { name: "Rear Delt Flyes", sets: 3, targetReps: "15-20", rest: 60, notes: "Light weight" },
+                    { name: "Cable Lateral Raises", sets: 3, targetReps: "12-15", rest: 60, notes: "Constant tension" },
+                    { name: "EZ Bar Curls", sets: 3, targetReps: "10-12", rest: 75, notes: "21s variation optional" },
+                    { name: "Dips", sets: 3, targetReps: "8-12", rest: 90, notes: "Bodyweight or weighted" }
+                ]
+            }
+        };
+
+        let currentDay = 1;
+        let workoutData = JSON.parse(localStorage.getItem('workoutData')) || {};
+
+        function selectDay(day) {
+            currentDay = day;
+            document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.day-btn')[day - 1].classList.add('active');
+            renderWorkout();
+        }
+
+        function renderWorkout() {
+            const container = document.getElementById('workoutContainer');
+            const workout = workouts[currentDay];
+            
+            container.innerHTML = workout.exercises.map((exercise, exerciseIndex) => `
+                <div class="exercise-card">
+                    <div class="exercise-header">
+                        <div class="exercise-name">${exercise.name}</div>
+                        <div class="exercise-info">${exercise.sets} sets × ${exercise.targetReps} reps | Rest: ${exercise.rest}s</div>
+                    </div>
+                    <div class="set-tracker">
+                        ${Array.from({ length: exercise.sets }, (_, setIndex) => `
+                            <div class="set-row">
+                                <div class="set-number">Set ${setIndex + 1}</div>
+                                <div class="input-group">
+                                    <span class="input-label">Weight</span>
+                                    <input type="number" inputmode="decimal" placeholder="0" 
+                                           id="weight-${exerciseIndex}-${setIndex}"
+                                           onchange="saveData()"
+                                           value="${getStoredValue('weight', exerciseIndex, setIndex)}">
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-label">Reps</span>
+                                    <input type="number" inputmode="numeric" placeholder="0" 
+                                           id="reps-${exerciseIndex}-${setIndex}"
+                                           onchange="saveData()"
+                                           value="${getStoredValue('reps', exerciseIndex, setIndex)}">
+                                </div>
+                                <button class="complete-btn ${isSetCompleted(exerciseIndex, setIndex) ? 'completed' : ''}" 
+                                        id="complete-${exerciseIndex}-${setIndex}"
+                                        onclick="toggleComplete(${exerciseIndex}, ${setIndex})">
+                                    ✓
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="exercise-info">${exercise.notes}</div>
+                    <textarea class="notes-input" 
+                              placeholder="Add notes..."
+                              id="notes-${exerciseIndex}"
+                              onchange="saveData()">${getStoredNotes(exerciseIndex)}</textarea>
+                </div>
+            `).join('');
+        }
+
+        function getStoredValue(type, exerciseIndex, setIndex) {
+            const today = new Date().toDateString();
+            const key = `${today}-day${currentDay}-ex${exerciseIndex}-set${setIndex}-${type}`;
+            return workoutData[key] || '';
+        }
+
+        function getStoredNotes(exerciseIndex) {
+            const today = new Date().toDateString();
+            const key = `${today}-day${currentDay}-ex${exerciseIndex}-notes`;
+            return workoutData[key] || '';
+        }
+
+        function isSetCompleted(exerciseIndex, setIndex) {
+            const today = new Date().toDateString();
+            const key = `${today}-day${currentDay}-ex${exerciseIndex}-set${setIndex}-complete`;
+            return workoutData[key] || false;
+        }
+
+        function toggleComplete(exerciseIndex, setIndex) {
+            const today = new Date().toDateString();
+            const key = `${today}-day${currentDay}-ex${exerciseIndex}-set${setIndex}-complete`;
+            workoutData[key] = !workoutData[key];
+            const btn = document.getElementById(`complete-${exerciseIndex}-${setIndex}`);
+            btn.classList.toggle('completed');
+            saveData();
+        }
+
+        function saveData() {
+            const workout = workouts[currentDay];
+            const today = new Date().toDateString();
+            
+            workout.exercises.forEach((exercise, exerciseIndex) => {
+                for (let setIndex = 0; setIndex < exercise.sets; setIndex++) {
+                    const weightInput = document.getElementById(`weight-${exerciseIndex}-${setIndex}`);
+                    const repsInput = document.getElementById(`reps-${exerciseIndex}-${setIndex}`);
+                    
+                    if (weightInput && weightInput.value) {
+                        workoutData[`${today}-day${currentDay}-ex${exerciseIndex}-set${setIndex}-weight`] = weightInput.value;
+                    }
+                    if (repsInput && repsInput.value) {
+                        workoutData[`${today}-day${currentDay}-ex${exerciseIndex}-set${setIndex}-reps`] = repsInput.value;
+                    }
+                }
+                
+                const notesInput = document.getElementById(`notes-${exerciseIndex}`);
+                if (notesInput && notesInput.value) {
+                    workoutData[`${today}-day${currentDay}-ex${exerciseIndex}-notes`] = notesInput.value;
+                }
+            });
+            
+            localStorage.setItem('workoutData', JSON.stringify(workoutData));
+        }
+
+        function clearDay() {
+            if (confirm('Clear all data for today\'s ' + workouts[currentDay].name + ' workout?')) {
+                const today = new Date().toDateString();
+                const keysToDelete = Object.keys(workoutData).filter(key => key.startsWith(`${today}-day${currentDay}-`));
+                keysToDelete.forEach(key => delete workoutData[key]);
+                localStorage.setItem('workoutData', JSON.stringify(workoutData));
+                renderWorkout();
+            }
+        }
+
+        function shareWorkout() {
+            const today = new Date().toDateString();
+            const workout = workouts[currentDay];
+            let shareText = `${workout.name} Workout - ${today}\n\n`;
+            
+            workout.exercises.forEach((exercise, exerciseIndex) => {
+                shareText += `${exercise.name}:\n`;
+                for (let setIndex = 0; setIndex < exercise.sets; setIndex++) {
+                    const weight = getStoredValue('weight', exerciseIndex, setIndex);
+                    const reps = getStoredValue('reps', exerciseIndex, setIndex);
+                    if (weight && reps) {
+                        shareText += `  Set ${setIndex + 1}: ${weight}lbs x ${reps} reps\n`;
+                    }
+                }
+                shareText += '\n';
+            });
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Workout',
+                    text: shareText
+                });
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = shareText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('Workout copied to clipboard!');
+            }
+        }
+
+        function showStats() {
+            const allDates = {};
+            Object.keys(workoutData).forEach(key => {
+                const match = key.match(/^(.*?)-day/);
+                if (match) {
+                    const date = match[1];
+                    allDates[date] = true;
+                }
+            });
+            
+            const totalWorkouts = Object.keys(allDates).length;
+            const lastWorkout = Object.keys(allDates).sort().pop() || 'Never';
+            
+            alert(`Total Workouts: ${totalWorkouts}\nLast Workout: ${lastWorkout}\n\nData stored locally on this device.`);
+        }
+
+        function exportToCSV() {
+            // Create CSV header
+            let csv = 'Date,Day,Exercise,Set,Weight,Reps,Completed,Notes\n';
+            
+            // Group data by date
+            const dataByDate = {};
+            Object.keys(workoutData).forEach(key => {
+                const match = key.match(/^(.*?)-day(\d+)-ex(\d+)-(.*)$/);
+                if (match) {
+                    const [_, date, day, exerciseIndex, field] = match;
+                    if (!dataByDate[date]) dataByDate[date] = {};
+                    if (!dataByDate[date][day]) dataByDate[date][day] = {};
+                    if (!dataByDate[date][day][exerciseIndex]) dataByDate[date][day][exerciseIndex] = {};
+                    
+                    if (field.includes('set')) {
+                        const setMatch = field.match(/set(\d+)-(.*)$/);
+                        if (setMatch) {
+                            const [__, setIndex, fieldType] = setMatch;
+                            if (!dataByDate[date][day][exerciseIndex][setIndex]) {
+                                dataByDate[date][day][exerciseIndex][setIndex] = {};
+                            }
+                            dataByDate[date][day][exerciseIndex][setIndex][fieldType] = workoutData[key];
+                        }
+                    } else if (field === 'notes') {
+                        dataByDate[date][day][exerciseIndex].notes = workoutData[key];
+                    }
+                }
+            });
+            
+            // Convert to CSV rows
+            Object.keys(dataByDate).sort().forEach(date => {
+                Object.keys(dataByDate[date]).forEach(day => {
+                    const workout = workouts[parseInt(day)];
+                    Object.keys(dataByDate[date][day]).forEach(exerciseIndex => {
+                        const exercise = workout.exercises[parseInt(exerciseIndex)];
+                        const exerciseData = dataByDate[date][day][exerciseIndex];
+                        
+                        // Add rows for each set
+                        Object.keys(exerciseData).forEach(setIndex => {
+                            if (setIndex !== 'notes') {
+                                const setData = exerciseData[setIndex];
+                                csv += `"${date}","${workout.name}","${exercise.name}","${parseInt(setIndex) + 1}","${setData.weight || ''}","${setData.reps || ''}","${setData.complete ? 'Yes' : 'No'}","${exerciseData.notes || ''}"\n`;
+                            }
+                        });
+                    });
+                });
+            });
+            
+            // Create blob and download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `workout-data-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize
+        renderWorkout();
+
+        // Prevent iOS bounce
+        document.addEventListener('touchmove', function(e) {
+            if (e.target.closest('.content-wrapper')) return;
+            e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
