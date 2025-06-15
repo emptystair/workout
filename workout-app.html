@@ -147,15 +147,15 @@
         }
 
         .history-container {
-            padding: 15px;
+            padding: 0;
+            width: 100%;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
 
         .history-table {
             background: white;
-            border-radius: 12px;
-            overflow: hidden;
+            overflow: visible;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             min-width: 100%;
         }
@@ -164,22 +164,25 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 14px;
+            min-width: 600px;
         }
 
         .history-table th {
             background: #2c3e50;
             color: white;
-            padding: 12px 8px;
+            padding: 12px 15px;
             text-align: left;
             font-weight: 600;
             position: sticky;
             top: 0;
             z-index: 10;
+            white-space: nowrap;
         }
 
         .history-table td {
-            padding: 10px 8px;
+            padding: 10px 15px;
             border-bottom: 1px solid #ecf0f1;
+            white-space: nowrap;
         }
 
         .history-table tr:last-child td {
@@ -509,8 +512,9 @@
                     </div>
                     ${previousWorkout ? `
                         <div class="previous-workout">
-                            <strong>Last time (${new Date(previousWorkout.date).toLocaleDateString()}):</strong> 
-                            ${previousWorkout.sets.map((set, i) => `Set ${i+1}: ${set.weight}lbs × ${set.reps}`).join(' | ')}
+                            <strong>Last time (${new Date(previousWorkout.date).toLocaleDateString()}):</strong><br>
+                            Weight: ${previousWorkout.sets.map(set => set.weight).join(', ')} lbs<br>
+                            Reps: ${previousWorkout.sets.map(set => set.reps).join(', ')}
                         </div>
                     ` : ''}
                     <div class="set-tracker">
@@ -826,7 +830,10 @@
                             </tbody>
                         </table>
                     </div>
-                    <button class="save-day-btn" onclick="exportHistory()" style="margin-top: 20px;">Export History to CSV</button>
+                    <div style="padding: 15px;">
+                        <button class="save-day-btn" onclick="exportHistory()" style="margin: 0; width: 100%;">Export History to CSV</button>
+                        <button class="tab-btn" onclick="clearHistory()" style="margin-top: 10px; width: 100%; background: #e74c3c; color: white;">Clear History</button>
+                    </div>
                 </div>
             `;
         }
@@ -851,6 +858,20 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+
+        function clearHistory() {
+            const confirmMessage = `Are you sure you want to clear all workout history?\n\nThis will delete ${savedWorkouts.length} saved workouts.\n\nThis action cannot be undone!`;
+            
+            if (confirm(confirmMessage)) {
+                // Second confirmation for safety
+                if (confirm('Are you REALLY sure? All history will be permanently deleted.')) {
+                    savedWorkouts = [];
+                    localStorage.setItem('savedWorkouts', JSON.stringify(savedWorkouts));
+                    renderHistory();
+                    alert('Workout history has been cleared.');
+                }
+            }
         }
 
         // Initialize
