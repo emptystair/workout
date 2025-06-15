@@ -37,10 +37,7 @@
             color: white;
             padding: 15px;
             padding-top: calc(15px + env(safe-area-inset-top));
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
+            position: relative;
             z-index: 100;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
@@ -53,7 +50,6 @@
         }
 
         .content-wrapper {
-            margin-top: calc(60px + env(safe-area-inset-top));
             padding-bottom: 80px;
         }
 
@@ -348,11 +344,8 @@
         }
 
         .content-wrapper {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            position: relative;
+            min-height: 100vh;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             /* Add extra scroll space to trigger Safari bar hiding */
@@ -747,11 +740,12 @@
                     const weight = getStoredValue('weight', exerciseIndex, setIndex);
                     const reps = getStoredValue('reps', exerciseIndex, setIndex);
                     
-                    if (weight || reps) {
+                    // Only save sets where BOTH weight AND reps are entered
+                    if (weight && reps) {
                         exerciseData.sets.push({
                             setNumber: setIndex + 1,
-                            weight: weight || '0',
-                            reps: reps || '0'
+                            weight: weight,
+                            reps: reps
                         });
                     }
                 }
