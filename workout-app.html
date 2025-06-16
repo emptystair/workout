@@ -330,26 +330,18 @@
             }
         }
 
-        /* iOS minimal-ui behavior */
+        /* iOS scrolling behavior */
         html {
-            height: 100vh;
-            height: -webkit-fill-available;
+            height: 100%;
         }
 
         body {
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
+            min-height: 100%;
             position: relative;
-            overflow: hidden;
         }
 
         .content-wrapper {
-            position: relative;
-            min-height: 100vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            /* Add extra scroll space to trigger Safari bar hiding */
-            padding-bottom: 150px;
+            padding-bottom: 100px;
         }
     </style>
 </head>
@@ -871,11 +863,6 @@
         // Initialize
         renderWorkout();
 
-        // Prevent iOS bounce
-        document.addEventListener('touchmove', function(e) {
-            if (e.target.closest('.content-wrapper')) return;
-            e.preventDefault();
-        }, { passive: false });
     </script>
 </body>
 </html>
