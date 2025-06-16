@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Test Data to Workout App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:active {
+            background: #2980b9;
+        }
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Add Test Data to Workout App</h1>
+    
+    <div class="info">
+        This will add workout data from last week to test the "previous workout" display feature.
+    </div>
+    
+    <button onclick="addTestData()">Add Last Week's Workout Data</button>
+    <button onclick="clearTestData()">Clear Test Data</button>
+    <button onclick="viewCurrentData()">View Current Data</button>
+    
+    <div id="result"></div>
+    
+    <p><a href="workout-app.html">← Back to Workout App</a></p>
+
+    <script>
+        function addTestData() {
+            // Get date from 7 days ago
+            const lastWeek = new Date();
+            lastWeek.setDate(lastWeek.getDate() - 7);
+            const dateString = lastWeek.toDateString();
+            
+            // Add test workout data
+            const testData = {
+                // Day 1 - Push workout
+                [`${dateString}-day1-ex0-set0-weight`]: '155',
+                [`${dateString}-day1-ex0-set0-reps`]: '5',
+                [`${dateString}-day1-ex0-set1-weight`]: '155',
+                [`${dateString}-day1-ex0-set1-reps`]: '5',
+                [`${dateString}-day1-ex0-set2-weight`]: '155',
+                [`${dateString}-day1-ex0-set2-reps`]: '4',
+                [`${dateString}-day1-ex0-set3-weight`]: '155',
+                [`${dateString}-day1-ex0-set3-reps`]: '3',
+                [`${dateString}-day1-ex0-set4-weight`]: '155',
+                [`${dateString}-day1-ex0-set4-reps`]: '3',
+                
+                // Overhead Press
+                [`${dateString}-day1-ex1-set0-weight`]: '65',
+                [`${dateString}-day1-ex1-set0-reps`]: '8',
+                [`${dateString}-day1-ex1-set1-weight`]: '65',
+                [`${dateString}-day1-ex1-set1-reps`]: '8',
+                [`${dateString}-day1-ex1-set2-weight`]: '65',
+                [`${dateString}-day1-ex1-set2-reps`]: '6',
+                [`${dateString}-day1-ex1-set3-weight`]: '65',
+                [`${dateString}-day1-ex1-set3-reps`]: '6',
+                
+                // Incline Dumbbell Press
+                [`${dateString}-day1-ex2-set0-weight`]: '40',
+                [`${dateString}-day1-ex2-set0-reps`]: '10',
+                [`${dateString}-day1-ex2-set1-weight`]: '40',
+                [`${dateString}-day1-ex2-set1-reps`]: '9',
+                [`${dateString}-day1-ex2-set2-weight`]: '40',
+                [`${dateString}-day1-ex2-set2-reps`]: '8',
+                
+                // Day 2 - Pull workout
+                [`${dateString}-day2-ex0-set0-weight`]: '0',
+                [`${dateString}-day2-ex0-set0-reps`]: '8',
+                [`${dateString}-day2-ex0-set1-weight`]: '0',
+                [`${dateString}-day2-ex0-set1-reps`]: '7',
+                [`${dateString}-day2-ex0-set2-weight`]: '0',
+                [`${dateString}-day2-ex0-set2-reps`]: '6',
+                [`${dateString}-day2-ex0-set3-weight`]: '0',
+                [`${dateString}-day2-ex0-set3-reps`]: '5',
+                [`${dateString}-day2-ex0-set4-weight`]: '0',
+                [`${dateString}-day2-ex0-set4-reps`]: '5',
+                
+                // Barbell Rows
+                [`${dateString}-day2-ex1-set0-weight`]: '95',
+                [`${dateString}-day2-ex1-set0-reps`]: '8',
+                [`${dateString}-day2-ex1-set1-weight`]: '95',
+                [`${dateString}-day2-ex1-set1-reps`]: '8',
+                [`${dateString}-day2-ex1-set2-weight`]: '95',
+                [`${dateString}-day2-ex1-set2-reps`]: '6',
+                [`${dateString}-day2-ex1-set3-weight`]: '95',
+                [`${dateString}-day2-ex1-set3-reps`]: '6'
+            };
+            
+            // Get existing data
+            const existingData = JSON.parse(localStorage.getItem('workoutData') || '{}');
+            
+            // Merge with test data
+            const mergedData = { ...existingData, ...testData };
+            
+            // Save to localStorage
+            localStorage.setItem('workoutData', JSON.stringify(mergedData));
+            
+            document.getElementById('result').innerHTML = `
+                <div class="success">
+                    <strong>Success!</strong><br>
+                    Added workout data from ${dateString}<br>
+                    Total data points added: ${Object.keys(testData).length}<br><br>
+                    Now go back to the workout app and you should see "Last time" data above each exercise!
+                </div>
+            `;
+        }
+        
+        function clearTestData() {
+            if (confirm('This will clear ALL workout data. Are you sure?')) {
+                localStorage.removeItem('workoutData');
+                localStorage.removeItem('savedWorkouts');
+                document.getElementById('result').innerHTML = `
+                    <div class="success">
+                        All workout data cleared!
+                    </div>
+                `;
+            }
+        }
+        
+        function viewCurrentData() {
+            const data = JSON.parse(localStorage.getItem('workoutData') || '{}');
+            const savedWorkouts = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
+            
+            document.getElementById('result').innerHTML = `
+                <div class="info">
+                    <strong>Current Workout Data:</strong><br>
+                    Total entries: ${Object.keys(data).length}<br>
+                    Saved workouts: ${savedWorkouts.length}<br><br>
+                    <details>
+                        <summary>View Raw Data</summary>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
